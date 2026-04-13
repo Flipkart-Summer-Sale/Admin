@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipkart Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        #toast { visibility: hidden; position: fixed; bottom: 20px; right: 20px; background: #388E3C; color: #fff; padding: 12px 24px; border-radius: 4px; z-index: 2000; transition: opacity 0.3s; opacity: 0; font-weight: 500;}
+        #toast.show { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- Admin Header -->
+    <div class="bg-[#2874F0] text-white p-4 shadow-md flex items-center justify-between">
+        <h1 class="text-xl font-bold italic tracking-wide">Flipkart <span class="text-[#FFE500]">Admin</span></h1>
+        <div class="text-sm font-medium bg-white/20 px-3 py-1 rounded">Add New Product</div>
+    </div>
+
+    <!-- Product Upload Form -->
+    <div class="max-w-3xl mx-auto mt-8 bg-white p-6 md:p-8 rounded-lg shadow-lg mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Product Details</h2>
+        
+        <form id="addProductForm" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                    <select id="category" required class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0]">
+                        <option value="mobile">Mobiles</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="appliance">Appliances</option>
+                        <option value="fashion">Fashion</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                    <input type="text" id="name" required placeholder="e.g. Apple iPhone 15 Pro Max" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0]">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sub-Title / Color *</label>
+                    <input type="text" id="sub" required placeholder="e.g. Titanium Black" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sale Price (₹) *</label>
+                    <input type="number" id="price" required placeholder="e.g. 599" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Real MRP (₹) *</label>
+                    <input type="number" id="mrp" required placeholder="e.g. 159900" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0]">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Image Links (Comma Separated for 3 images) *</label>
+                <textarea id="images" required rows="3" placeholder="https://link1.jpg, https://link2.jpg, https://link3.jpg" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0] text-sm"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Highlights (Comma Separated) *</label>
+                <textarea id="highlights" required rows="3" placeholder="256 GB ROM, 6.7 inch Display, A17 Pro Chip" class="w-full border border-gray-300 rounded p-2.5 outline-none focus:border-[#2874F0] text-sm"></textarea>
+            </div>
+
+            <div class="flex items-center space-x-6 pt-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="inStock" checked class="w-4 h-4 accent-[#2874F0]">
+                    <span class="text-sm font-medium text-gray-700">In Stock</span>
+                </label>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">Rating:</label>
+                    <input type="number" id="rating" step="0.1" max="5" min="1" value="4.5" class="w-20 border border-gray-300 rounded p-1 text-center outline-none focus:border-[#2874F0]">
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-[#fb641b] hover:bg-[#f05a12] text-white font-bold py-3 rounded shadow transition duration-200 mt-4">
+                Upload Product to Database
+            </button>
+        </form>
+    </div>
+
+    <div id="toast"><i class="ph-bold ph-check-circle mr-2"></i>Product Uploaded Successfully!</div>
+
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Aapka Original Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6Wcy9RcNQq6d35gOtW4c5Oyropkflr_k",
+            authDomain: "online-shopping-1b298.firebaseapp.com",
+            databaseURL: "https://online-shopping-1b298-default-rtdb.firebaseio.com",
+            projectId: "online-shopping-1b298",
+            storageBucket: "online-shopping-1b298.firebasestorage.app",
+            messagingSenderId: "514600292582",
+            appId: "1:514600292582:web:3bef8ed527250b4de4eb27"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "Uploading..."; btn.disabled = true; btn.classList.add("opacity-50");
+
+            // Process Data
+            const id = Date.now(); // Unique ID generated by time
+            const imagesArray = document.getElementById('images').value.split(',').map(s => s.trim()).filter(s => s);
+            const highlightsArray = document.getElementById('highlights').value.split(',').map(s => s.trim()).filter(s => s);
+            
+            const productData = {
+                id: id,
+                category: document.getElementById('category').value,
+                name: document.getElementById('name').value.trim(),
+                sub: document.getElementById('sub').value.trim(),
+                price: Number(document.getElementById('price').value),
+                mrp: Number(document.getElementById('mrp').value),
+                images: imagesArray,
+                highlights: highlightsArray,
+                inStock: document.getElementById('inStock').checked,
+                rating: Number(document.getElementById('rating').value)
+            };
+
+            try {
+                // Save to Firebase Database
+                await set(ref(db, 'products/' + id), productData);
+                showToast();
+                document.getElementById('addProductForm').reset();
+            } catch (error) {
+                console.error("Error uploading:", error);
+                alert("Upload Failed! Check console. Ensure your Firebase Database Rules allow write access.");
+            } finally {
+                btn.innerText = "Upload Product to Database"; btn.disabled = false; btn.classList.remove("opacity-50");
+            }
+        });
+
+        function showToast() {
+            const t = document.getElementById("toast"); t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3000);
+        }
+    </script>
+</body>
+</html>
